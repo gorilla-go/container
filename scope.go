@@ -9,9 +9,9 @@ const REQUEST BeanScope = 1
 
 func (s BeanScope) ToString() string {
 	switch s {
-	case 0:
+	case SINGLETON:
 		return "Singleton"
-	case 1:
+	case REQUEST:
 		return "Request"
 	}
 	panic(errors.New("invalid bean scope"))
