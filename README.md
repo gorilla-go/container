@@ -29,7 +29,7 @@ func main() {
 ```
 
 ##### Register Lazy Singleton And Fetch
->>> Lazy singleton will be built when first fetch it. and keep singleton on next.
+> Lazy singleton will be built when first fetch it. and keep singleton on next.
 ```go
 type Register struct {}
 
