@@ -8,23 +8,18 @@ type Register struct {}
 
 func main() {
     container := NewContainer()
+
+    // set singleton.
 	SetSingleton(container, &Register{})
+    // get singleton by generic
 	_ = GetSingleton[*Register](container)
-}
-```
 
-##### Register Singleton With Alias And Fetch By Alias Or Generic Type
-```go
-type Register struct {}
-
-func main() {
-    container := NewContainer()
-	SetSingletonWithAlias(container, "register", &Register{})
+    // set singleton by alias
+    SetSingletonWithAlias(container, "action", &Action{})
     // get singleton by generic type
-	_ = GetSingleton[*Register](container)
-
-    // get by alias
-    _ = GetSingletonByAlias[*Register](container, "register")
+	_ = GetSingleton[*Action](container)
+    // get by alias, and the execution efficiency is higher than the former.
+    _ = GetSingletonByAlias[*Action](container, "action")
 }
 ```
 
@@ -35,6 +30,8 @@ type Register struct {}
 
 func main() {
     container := NewContainer()
+
+    // set lazy singleton. this func will only save, and not exec.
 	SetLazySingleton(container, func () *Register {
         return &Register{}
     })
@@ -42,10 +39,19 @@ func main() {
     // will panic when this action called.
 	_ = GetSingleton[*Register](container)
 
-    // will return Register Struct Successfully.
+    // will return register struct successfully. on this time, register action func done once.
     _ = GetLazySingleton[*Register](container)
 
-    // this also return register struct, because register had been built at before.
+    // this also return register struct, because register had been built at before and keep singleton.
     _ = GetSingleton[*Register](container)
+
+    
+    // set lazy singleton by alias
+    SetLazySingletonWithAlias(container, "action", func () *Action {
+        return &Action{}
+    })
+
+    // fetch by alias
+    _ = GetLazySingletonByAlias[*Action](container, "action")
 }
 ```
