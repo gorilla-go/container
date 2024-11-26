@@ -24,6 +24,7 @@ type IStudent2 interface {
 
 func Test_getObjectName(t *testing.T) {
 	container := NewContainer()
+
 	BindImplement[IStudent](container, &Student{
 		Name: "name",
 		Age:  18,
