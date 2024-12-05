@@ -12,9 +12,10 @@ type Container struct {
 	singletonsByAlias map[string]string
 
 	// 懒汉式单例
-	lazySingletons        map[string]any
-	lazySingletonsByAlias map[string]string
-	lazySingletonsMutex   sync.RWMutex
+	lazySingletons         map[string]any
+	lazySingletonsByAlias  map[string]string
+	lazySingletonsMutex    sync.RWMutex
+	lazySingletonsMutexMap map[string]*sync.RWMutex
 
 	// 对象提供者
 	providers        map[string]any
@@ -30,16 +31,17 @@ type Container struct {
 
 func NewContainer() *Container {
 	return &Container{
-		singletons:            make(map[string]any),
-		singletonsByAlias:     make(map[string]string),
-		providers:             make(map[string]any),
-		providersByAlias:      make(map[string]string),
-		lazySingletons:        make(map[string]any),
-		lazySingletonsByAlias: make(map[string]string),
-		lazySingletonsMutex:   sync.RWMutex{},
-		implements:            make(map[string]any),
-		typeCache:             make(map[reflect.Type]string),
-		typeCacheMutex:        sync.RWMutex{},
+		singletons:             make(map[string]any),
+		singletonsByAlias:      make(map[string]string),
+		providers:              make(map[string]any),
+		providersByAlias:       make(map[string]string),
+		lazySingletons:         make(map[string]any),
+		lazySingletonsByAlias:  make(map[string]string),
+		lazySingletonsMutex:    sync.RWMutex{},
+		lazySingletonsMutexMap: make(map[string]*sync.RWMutex),
+		implements:             make(map[string]any),
+		typeCache:              make(map[reflect.Type]string),
+		typeCacheMutex:         sync.RWMutex{},
 	}
 }
 
@@ -141,18 +143,26 @@ func SetLazySingletonWithAlias[T any](container *Container, name string, provide
 
 // 通过泛型名称获取懒汉式单例
 func getLazySingletonByGenericName[T any](container *Container, genericName string) (T, error) {
-	container.lazySingletonsMutex.RLock()
 	// 检查单例库中是否存在该对象
 	if t, ok := container.singletons[genericName]; ok {
-		container.lazySingletonsMutex.RUnlock()
 		return t.(T), nil
 	}
-	container.lazySingletonsMutex.RUnlock()
 
 	// 不存在则创建
 	container.lazySingletonsMutex.Lock()
-	defer container.lazySingletonsMutex.Unlock()
+	if _, ok := container.lazySingletonsMutexMap[genericName]; !ok {
+		container.lazySingletonsMutexMap[genericName] = &sync.RWMutex{}
+	}
+	container.lazySingletonsMutex.Unlock()
+	container.lazySingletonsMutexMap[genericName].Lock()
+	defer container.lazySingletonsMutexMap[genericName].Unlock()
 
+	// 再次检查单例库中是否存在该对象
+	if t, ok := container.singletons[genericName]; ok {
+		return t.(T), nil
+	}
+
+	// 检查懒汉式单例库中是否存在该对象
 	if _, ok := container.lazySingletons[genericName]; !ok {
 		var zero T
 		return zero, fmt.Errorf("lazy singleton %s not found", genericName)
