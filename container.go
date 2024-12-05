@@ -54,34 +54,35 @@ func NewContainer() *Container {
 func fetchGenericType[T any]() string {
 	t := reflect.TypeOf((*T)(nil)).Elem()
 
-	typeCacheMutex.RLock()
+	// 检查缓存
 	if val, ok := typeCache[t]; ok {
-		typeCacheMutex.RUnlock()
 		return val
 	}
-	typeCacheMutex.RUnlock()
 
+	// 写入缓存
 	typeCacheMutex.Lock()
 	defer typeCacheMutex.Unlock()
 
-	if _, ok := typeCache[t]; !ok {
-		typeName := ""
-		switch t.Kind() {
-		case reflect.Ptr:
-			elem := t.Elem()
-			if elem.PkgPath() != "" {
-				typeName = elem.PkgPath() + ".*" + elem.Name()
-			} else {
-				typeName = "builtin.*" + elem.Name()
-			}
-		default:
-			if t.PkgPath() != "" {
-				typeName = t.PkgPath() + "." + t.Name()
-			} else {
-				typeName = "builtin." + t.Name()
-			}
+	// 再次检查缓存
+	if val, ok := typeCache[t]; ok {
+		return val
+	}
+
+	// 写入缓存
+	switch t.Kind() {
+	case reflect.Ptr:
+		elem := t.Elem()
+		if elem.PkgPath() != "" {
+			typeCache[t] = elem.PkgPath() + ".*" + elem.Name()
+		} else {
+			typeCache[t] = "builtin.*" + elem.Name()
 		}
-		typeCache[t] = typeName
+	default:
+		if t.PkgPath() != "" {
+			typeCache[t] = t.PkgPath() + "." + t.Name()
+		} else {
+			typeCache[t] = "builtin." + t.Name()
+		}
 	}
 	return typeCache[t]
 }
