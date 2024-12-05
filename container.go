@@ -88,12 +88,12 @@ func fetchGenericType[T any]() string {
 
 // 设置单例对象
 func SetSingleton[T any](container *Container, class T) {
-	container.singletons[fetchGenericType[T](container)] = class
+	container.singletons[fetchGenericType[T]()] = class
 }
 
 // 获取单例对象
 func GetSingleton[T any](container *Container) (T, error) {
-	genericName := fetchGenericType[T](container)
+	genericName := fetchGenericType[T]()
 	if t, ok := container.singletons[genericName]; ok {
 		return t.(T), nil
 	}
@@ -113,7 +113,7 @@ func GetMustSingleton[T any](container *Container) T {
 // 设置单例对象并添加别名
 func SetSingletonWithAlias[T any](container *Container, name string, class T) {
 	SetSingleton(container, class)
-	container.singletonsByAlias[name] = fetchGenericType[T](container)
+	container.singletonsByAlias[name] = fetchGenericType[T]()
 }
 
 // 通过别名获取单例对象
@@ -136,14 +136,14 @@ func GetMustSingletonByAlias[T any](container *Container, name string) T {
 
 // 设置懒汉式单例
 func SetLazySingleton[T any](container *Container, provideFunc func() T) {
-	container.lazySingletons[fetchGenericType[T](container)] = provideFunc
+	container.lazySingletons[fetchGenericType[T]()] = provideFunc
 }
 
 // 设置懒汉式单例并添加别名
 func SetLazySingletonWithAlias[T any](container *Container, name string, provideFunc func() T) {
-	genericName := fetchGenericType[T](container)
+	genericName := fetchGenericType[T]()
 	container.lazySingletons[genericName] = provideFunc
-	container.lazySingletonsByAlias[name] = fetchGenericType[T](container)
+	container.lazySingletonsByAlias[name] = fetchGenericType[T]()
 }
 
 // 通过泛型名称获取懒汉式单例
@@ -179,7 +179,7 @@ func getLazySingletonByGenericName[T any](container *Container, genericName stri
 
 // 获取懒汉式单例
 func GetLazySingleton[T any](container *Container) (T, error) {
-	return getLazySingletonByGenericName[T](container, fetchGenericType[T](container))
+	return getLazySingletonByGenericName[T](container, fetchGenericType[T]())
 }
 
 // 获取懒汉式单例，如果对象不存在则panic
@@ -212,13 +212,13 @@ func GetMustLazySingletonByAlias[T any](container *Container, name string) T {
 
 // 设置对象供应者
 func SetProvider[T any](container *Container, provideFunc func() T) {
-	container.providers[fetchGenericType[T](container)] = provideFunc
+	container.providers[fetchGenericType[T]()] = provideFunc
 }
 
 // 设置提供者对象并添加别名
 func SetProviderWithAlias[T any](container *Container, name string, provideFunc func() T) {
 	SetProvider(container, provideFunc)
-	container.providersByAlias[name] = fetchGenericType[T](container)
+	container.providersByAlias[name] = fetchGenericType[T]()
 }
 
 // 通过泛型名称获取提供者对象
@@ -232,7 +232,7 @@ func getProviderByGenericName[T any](container *Container, genericName string) (
 
 // 获取提供者对象
 func GetProvider[T any](container *Container) (T, error) {
-	return getProviderByGenericName[T](container, fetchGenericType[T](container))
+	return getProviderByGenericName[T](container, fetchGenericType[T]())
 }
 
 // 获取提供者对象，如果对象不存在则panic
@@ -266,16 +266,16 @@ func GetMustProviderByAlias[T any](container *Container, name string) T {
 // 绑定实现
 func BindImplement[T any](container *Container, implement any) {
 	var _ T = implement.(T)
-	container.implements[fetchGenericType[T](container)] = implement
+	container.implements[fetchGenericType[T]()] = implement
 }
 
 // 获取实现
 func GetImplement[T any](container *Container) (T, error) {
-	if t, ok := container.implements[fetchGenericType[T](container)]; ok {
+	if t, ok := container.implements[fetchGenericType[T]()]; ok {
 		return t.(T), nil
 	}
 	var zero T
-	return zero, fmt.Errorf("implement %s not found", fetchGenericType[T](container))
+	return zero, fmt.Errorf("implement %s not found", fetchGenericType[T]())
 }
 
 // 获取实现，如果实现不存在则panic
