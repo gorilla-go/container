@@ -6,6 +6,17 @@ import (
 	"sync"
 )
 
+var (
+	// 类型缓存
+	typeCache      map[reflect.Type]string
+	typeCacheMutex sync.RWMutex
+)
+
+func init() {
+	typeCache = make(map[reflect.Type]string)
+	typeCacheMutex = sync.RWMutex{}
+}
+
 type Container struct {
 	// 单例注册
 	singletons        map[string]any
@@ -23,10 +34,6 @@ type Container struct {
 
 	// 实现绑定
 	implements map[string]any
-
-	// 类型缓存
-	typeCache      map[reflect.Type]string
-	typeCacheMutex sync.RWMutex
 }
 
 func NewContainer() *Container {
@@ -40,26 +47,24 @@ func NewContainer() *Container {
 		lazySingletonsMutex:    sync.RWMutex{},
 		lazySingletonsMutexMap: make(map[string]*sync.RWMutex),
 		implements:             make(map[string]any),
-		typeCache:              make(map[reflect.Type]string),
-		typeCacheMutex:         sync.RWMutex{},
 	}
 }
 
 // 获取泛型类型
-func fetchGenericType[T any](container *Container) string {
+func fetchGenericType[T any]() string {
 	t := reflect.TypeOf((*T)(nil)).Elem()
 
-	container.typeCacheMutex.RLock()
-	if val, ok := container.typeCache[t]; ok {
-		container.typeCacheMutex.RUnlock()
+	typeCacheMutex.RLock()
+	if val, ok := typeCache[t]; ok {
+		typeCacheMutex.RUnlock()
 		return val
 	}
-	container.typeCacheMutex.RUnlock()
+	typeCacheMutex.RUnlock()
 
-	container.typeCacheMutex.Lock()
-	defer container.typeCacheMutex.Unlock()
+	typeCacheMutex.Lock()
+	defer typeCacheMutex.Unlock()
 
-	if _, ok := container.typeCache[t]; !ok {
+	if _, ok := typeCache[t]; !ok {
 		typeName := ""
 		switch t.Kind() {
 		case reflect.Ptr:
@@ -76,9 +81,9 @@ func fetchGenericType[T any](container *Container) string {
 				typeName = "builtin." + t.Name()
 			}
 		}
-		container.typeCache[t] = typeName
+		typeCache[t] = typeName
 	}
-	return container.typeCache[t]
+	return typeCache[t]
 }
 
 // 设置单例对象
